@@ -1,0 +1,144 @@
+package graph;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.*;
+
+public class MinDistSlow {
+    public static List<List<Integer>> graph;
+    public static Set<Integer> V = new HashSet<>();
+    public static long[] dp;
+    public static final long MAX = Long.MAX_VALUE - 2;
+    public static TreeSet<Pair> next = new TreeSet<>();
+
+    public static void main(String[] args) {
+        graph = readNonOrientedGraph();
+        if (graph == null) return;
+        int n = graph.size();
+
+        if (graph.getFirst().isEmpty()) {
+            StringBuilder res = new StringBuilder("0 ");
+            for (int i = 1; i < n; i++) {
+                res.append("-1").append(" ");
+            }
+            System.out.println(res);
+            return;
+        }
+
+        dp = new long[n];
+        Arrays.fill(dp, MAX);
+
+        dp[0] = 0;
+        next.add(new Pair(0, 0));
+
+        while (!V.isEmpty()) {
+            int id = findMin();
+            if (id < 0) break;
+            for (int w: graph.get(id)) {
+                if (V.contains(w)) {
+                    long pre = dp[w];
+                    dp[w] = Math.min(pre, dp[id] + 1);
+                    if (pre > dp[w]) {
+                        next.remove(new Pair(w, pre));
+                        next.add(new Pair(w, dp[w]));
+                    }
+                }
+            }
+        }
+
+        StringBuilder str = new StringBuilder();
+        for (long a: dp) {
+            if (a == MAX) {
+                str.append(-1).append(" ");
+            } else {
+                str.append(a).append(" ");
+            }
+        }
+        System.out.println(str);
+    }
+
+    private static int findMin() {
+        if (next.isEmpty()) return -1;
+        int res = next.first().id;
+        V.remove(res);
+        next.removeFirst();
+        return res;
+    }
+
+    private static List<List<Integer>> readNonOrientedGraph() {
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(
+                    System.in,
+                    "UTF8"));
+            try {
+                List<List<Integer>> graph = new ArrayList<>();
+                StringTokenizer tokenizer = new StringTokenizer(reader.readLine(), " ");
+                int n = Integer.parseInt(tokenizer.nextToken());
+                int m = Integer.parseInt(tokenizer.nextToken());
+                for (int i = 0; i < n; i++) {
+                    graph.add(new ArrayList<>());
+                }
+                for (int i = 0; i < m; i++) {
+                    tokenizer = new StringTokenizer(reader.readLine(), " ");
+                    int v = Integer.parseInt(tokenizer.nextToken()) - 1;
+                    int w = Integer.parseInt(tokenizer.nextToken()) - 1;
+                    graph.get(v).add(w);
+                    graph.get(w).add(v);
+                    if (v != w) {
+                        V.add(v);
+                        V.add(w);
+                        if (v != 0) {
+                            next.add(new Pair(v, MAX));
+                        }
+
+                        if (w != 0) {
+                            next.add(new Pair(w, MAX));
+                        }
+                    }
+                }
+                return graph;
+            } finally {
+                reader.close();
+            }
+        } catch (IOException e) {
+            System.out.println("Error reading file: " + e.getMessage());
+        }
+        return null;
+    }
+
+    public static class Pair implements Comparable<Pair> {
+        protected final int id;
+        protected long cost;
+
+        public Pair(int id, long cost) {
+            this.id = id;
+            this.cost = cost;
+        }
+
+        public void setCost(long cost) {
+            this.cost = cost;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Pair pair = (Pair) o;
+            return id == pair.id && cost == pair.cost;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id, cost);
+        }
+
+        @Override
+        public int compareTo(Pair other) {
+            if (this.cost == other.cost) {
+                return Integer.compare(this.id, other.id);
+            }
+            return Long.compare(this.cost, other.cost);
+        }
+    }
+}
